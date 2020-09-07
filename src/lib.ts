@@ -49,22 +49,25 @@ export function cleanup(fn: () => void) {
 
 export function effect<T>(fn: (prev?: T) => T, current?: T) {
   const context = {
-      disposables: [] as (() => void)[],
-      owner: globalContext
-    },
-    cleanupFn = (final: boolean) => {
-      const d = context.disposables;
-      context.disposables = [];
-      for (let k = 0, len = d.length; k < len; k++) d[k]();
-      final && dispose();
-    },
-    dispose = autorun(() => {
-      cleanupFn(false);
-      globalContext = context;
-      current = fn(current);
-      globalContext = globalContext.owner;
-    });
+    disposables: [] as (() => void)[],
+    owner: globalContext
+  };
+  
+  const cleanupFn = (final: boolean) => {
+    const d = context.disposables;
+    context.disposables = [];
+    for (let k = 0, len = d.length; k < len; k++) d[k]();
+    final && dispose();
+  };
+  
   cleanup(() => cleanupFn(true));
+  
+  const dispose = autorun(() => {
+    cleanupFn(false);
+    globalContext = context;
+    current = fn(current);
+    globalContext = globalContext.owner;
+  });
 }
 
 // only updates when boolean expression changes
